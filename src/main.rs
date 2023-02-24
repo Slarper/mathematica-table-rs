@@ -49,35 +49,60 @@
 /// table![1, 0..3,]
 /// ```
 macro_rules! table {
-    // Note: $(,)? allows trailing comma.
 
-    // Simplest situation: table![expr] => expr
-    [$e:expr $(,)?] => {
+    // Simplest Situation: table![expr]
+    [$e:expr] => {{
         $e
-    };
+    }};
+    // Allow trailing comma
+    [$e:expr,] => {{
+        $e
+    }};
 
-    // Deal with the Iterator Expr with the symbol: table![expr, {x, iter}, ...]
-    [$e:expr ,{$x:ident, $i:expr} $(,$j:expr)* $(,)?] => {{
+    // Normal Situation: table![expr, {x, iter}]
+    [$e:expr, {$x:ident, $i:expr}] => {{
         let mut v = vec![];
         for $x in $i {
-            v.push(table![$e $(,$j)*])
+            v.push(table![$e])
         };
         v
     }};
+    [$e:expr, {$x:ident, $i:expr} $($j:tt)*] => {{
+        table![table![$e $($j)*], {$x, $i}]
+    }};
 
-    // Deal with the Iterator Expr without the symbol: table![expr, iter, ...]
-    [$e:expr ,$i:expr $(,$j:expr)* $(,)?] => {{
+    // Special Situation: table![expr, {_, iter}]
+    // Ignore the index value
+    [$e:expr, {_, $i:expr}] => {{
         let mut v = vec![];
         for _ in $i {
-            v.push(table![$e $(,$j)*])
+            v.push(table![$e])
         };
         v
+    }};
+    [$e:expr, {_, $i:expr} $($j:tt)*] => {{
+        table![table![$e $($j)*], $i]
+    }};
+
+    // Simplified Situation: table![expr, iter]
+    // Only iterator.
+    [$e:expr, $i:expr] => {{
+        table![$e, {_, $i}]
+    }};
+    [$e:expr, $i:expr, $($j:tt)*] => {{
+        table![table![$e,$($j)*], $i]
     }};
 }
 
 fn main() {
 
-    let a = table![format!("{}",x), {x,0..3}, 0..2];
+    let a = table![
+        {
+            let b = x + 1;
+            x + b
+        }
+        , {x, 0..2},
+    ];
     println!("{:?}", a);
 
 }
