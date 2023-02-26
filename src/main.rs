@@ -61,9 +61,9 @@ macro_rules! table {
 
     // Normal Situation: table![expr, {x, iter}]
     [$e:expr, {$x:ident, $i:expr}] => {{
-        let mut v = vec![];
+        let mut v = Vec::new();
         for $x in $i {
-            v.push(table![$e])
+            v.push($e)
         };
         v
     }};
@@ -74,9 +74,11 @@ macro_rules! table {
     // Special Situation: table![expr, {_, iter}]
     // Ignore the index value
     [$e:expr, {_, $i:expr}] => {{
-        let mut v = vec![];
+        let mut v = Vec::new();
+        // For Performance
+        let value = $e;
         for _ in $i {
-            v.push(table![$e])
+            v.push(value)
         };
         v
     }};
@@ -97,11 +99,10 @@ macro_rules! table {
 fn main() {
 
     let a = table![
-        {
-            let b = x + 1;
-            x + b
-        }
-        , {x, 0..2},
+        x * y,
+        {x, 1..=9},
+        {y, 1..=x},
+        0..5,
     ];
     println!("{:?}", a);
 
