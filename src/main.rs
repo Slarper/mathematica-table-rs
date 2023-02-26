@@ -1,3 +1,4 @@
+
 /// **Mathematica Table function**
 ///
 /// ```
@@ -48,6 +49,10 @@
 /// ```
 /// table![1, 0..3,]
 /// ```
+///
+/// **CAN NOT BE `const`**
+///
+/// **Return Type is a nested Vec.**
 macro_rules! table {
 
     // Simplest Situation: table![expr]
@@ -59,7 +64,7 @@ macro_rules! table {
         $e
     }};
 
-    // Normal Situation: table![expr, {x, iter}]
+    // Normal: table![expr, {x, iter}]
     [$e:expr, {$x:ident, $i:expr}] => {{
         let mut v = Vec::new();
         for $x in $i {
@@ -71,23 +76,15 @@ macro_rules! table {
         table![table![$e $($j)*], {$x, $i}]
     }};
 
-    // Special Situation: table![expr, {_, iter}]
-    // Ignore the index value
+    // Allow ignoring the index value: table![expr, {_, iter}]
     [$e:expr, {_, $i:expr}] => {{
-        let mut v = Vec::new();
-        // For Performance
-        let value = $e;
-        for _ in $i {
-            v.push(value)
-        };
-        v
+        vec![$e; Iterator::count(IntoIterator::into_iter($i))]
     }};
     [$e:expr, {_, $i:expr} $($j:tt)*] => {{
         table![table![$e $($j)*], $i]
     }};
 
-    // Simplified Situation: table![expr, iter]
-    // Only iterator.
+    // Simplified: table![expr, iter]
     [$e:expr, $i:expr] => {{
         table![$e, {_, $i}]
     }};
@@ -96,14 +93,123 @@ macro_rules! table {
     }};
 }
 
+/// Less Flexible but
+///
+/// **CAN BE `const`**
+///
+/// ```
+/// const ARR : [i32;3] = array![x,{x,2,4,1}]; // [2 3 4]
+/// ```
+macro_rules! array {
+    [$e:expr] => {{
+        $e
+    }};
+
+    [$e:expr,] => {{
+        $e
+    }};
+
+    // Normal
+    [$e:expr, {$x:ident, $st:expr, $end:expr, $dlt:expr}] => {{
+
+        // Calculate Length of Array
+        const LEN: usize = (($end - $st) / $dlt) as usize + 1;
+
+        // Loop Initialization.
+        // TODO:Can use unsafe for better code.
+        let mut $x = $st;
+        let mut i = 0;
+        let mut arr = [$e; LEN];
+        i += 1;
+        $x = $x + $dlt;
+
+        if ($dlt as f64) > 0f64
+        {
+            while $x <= $end
+            {
+                arr[i] = $e;
+                $x = $x + $dlt;
+                i += 1;
+            }
+        } else {
+            while $x >= $end
+            {
+                arr[i] = $e;
+                $x = $x + $dlt;
+                i += 1;
+            }
+        }
+
+        arr
+    }};
+    [$e:expr, {$x:ident, $st:expr, $end:expr, $dlt:expr} $($others:tt)*] => {{
+        array![array![$e $($others)*], {$x, $st, $end, $dlt}]
+    }};
+
+    // array![expr, {x, start, end}]
+    [$e:expr, {$x:ident, $st:expr, $end:expr} ] => {{
+        array![$e, {$x, $st, $end, 1}]
+    }};
+    [$e:expr, {$x:ident, $st:expr, $end:expr} $($others:tt)*] => {{
+        array![array![$e $($others)*], {$x, $st, $end}]
+    }};
+
+    // array![expr, {x, end}]
+    [$e:expr, {$x:ident, $end:expr} ] => {{
+        array![$e, {$x, 1, $end}]
+    }};
+    [$e:expr, {$x:ident, $end:expr} $($others:tt)*] => {{
+        array![array![$e $($others)*], {$x, $end}]
+    }};
+
+    // Allow ignoring index: array![expr, {_, st, end, dlt}]
+    [$e:expr, {_, $st:expr, $end:expr, $dlt:expr}] => {{
+
+        // Calculate Length of Array
+        const LEN: usize = (($end - $st) / $dlt) as usize + 1;
+
+        let arr = [$e; LEN];
+        arr
+    }};
+    [$e:expr, {_, $st:expr, $end:expr, $dlt:expr} $($others:tt)*] => {{
+        array![array![$e $($others)*], {_, $st, $end, $dlt}]
+    }};
+
+    // array![expr, {_, st, end}]
+    [$e:expr, {_, $st:expr, $end:expr}] => {{
+        array![$e, {_, $st, $end, 1}]
+    }};
+    [$e:expr, {_, $st:expr, $end:expr} , $($others:tt)*] => {{
+        array![array![$e, $($others)*], {_, $st, $end}]
+    }};
+
+    // array![expr, {_, end}]
+    [$e:expr, {_, $end:expr}] => {{
+        array![$e, {_,1, $end}]
+    }};
+    [$e:expr, {_, $end:expr}, $($others:tt)*] => {{
+        array![array![$e, $($others)*], {_, $end}]
+    }};
+
+    // array![expr, count]
+    [$e:expr, $end:expr] => {{
+        array![$e, {_,1, $end}]
+    }};
+    [$e:expr, $end:expr, $($others:tt)*] => {{
+        array![array![$e, $($others)*], {_, $end}]
+    }};
+
+}
+
 fn main() {
 
-    let a = table![
-        x * y,
-        {x, 1..=9},
-        {y, 1..=x},
-        0..5,
-    ];
-    println!("{:?}", a);
+    let x = table![table_v * 1, {table_v, 0..3}, 0..4];
+
+    println!("{:?}", x);
+
+
+    const  Y: [[i32; 6]; 5] = array![x, {x,5}, 6];
+
+    println!("{:?}", Y);
 
 }
