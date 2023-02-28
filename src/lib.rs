@@ -60,6 +60,12 @@ macro_rules! table {
         $e
     }};
 
+    // Empty Iterator.
+    // table![expr, {}]
+    [$e:expr , {}] => {{
+        vec![$e;0]
+    }};
+
     // Normal:
     // table![expr, {x, iter}]
     [$e:expr, {$x:ident, $i:expr}] => {{
@@ -100,6 +106,10 @@ macro_rules! array {
 
     [$e:expr $(,)?] => {{
         $e
+    }};
+
+    [$e:expr , {}] => {{
+        [$e; 0]
     }};
 
     // Normal:
