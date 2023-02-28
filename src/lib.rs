@@ -204,12 +204,67 @@ macro_rules! array {
 #[macro_export]
 macro_rules! fold {
     // For functions
-    [$f:ident, $e:expr, {$fst:expr  }] => {{
+    [$f:ident, $e:expr, {}] => {{
+        $e
+    }};
+    [$f:ident, $e:expr, {$fst:expr }] => {{
         $f($e, $fst)
     }};
+    [$f:ident, $e:expr, {$fst:expr, $($otr:tt)*  }] => {{
+        fold![$f, fold![$f, $e,{$fst}], {$($otr)*}]
+    }};
+
     // For macros
-    [$f:ident !, $e:expr, {$fst:expr  }] => {{
+    [$f:ident !, $e:expr, {}] => {{
+        $e
+    }};
+    // expr
+    [$f:ident !, $e:expr, {$fst:expr }] => {{
         $f!($e, $fst)
+    }};
+    [$f:ident !, $e:expr, {$fst:expr, $($otr:tt)*  }] => {{
+        fold![$f!, fold![$f!, $e,{$fst}], {$($otr)*}]
+    }};
+    // {...}
+    [$f:ident !, $e:expr, {{$($fst:tt)*} }] => {{
+        $f!($e, {$($fst)*})
+    }};
+    [$f:ident !, $e:expr, {{$($fst:tt)*} , $($otr:tt)*}] => {{
+        fold![$f!, fold![$f!, $e,{{$($fst)*}}], {$($otr)*}]
+    }};
+
+}
+
+#[macro_export]
+macro_rules! roll {
+    // For functions
+    [$f:ident, $e:expr, {}] => {{
+        $e
+    }};
+    [$f:ident, $e:expr, {$fst:expr }] => {{
+        $f($e, $fst)
+    }};
+    [$f:ident, $e:expr, {$fst:expr, $($otr:tt)*  }] => {{
+        roll![$f, roll![$f, $e,{$($otr)*}], {$fst}]
+    }};
+
+    // For macros
+    [$f:ident !, $e:expr, {}] => {{
+        $e
+    }};
+    // expr
+    [$f:ident !, $e:expr, {$fst:expr }] => {{
+        $f!($e, $fst)
+    }};
+    [$f:ident !, $e:expr, {$fst:expr, $($otr:tt)*  }] => {{
+        roll![$f!, roll![$f!, $e,{$($otr)*}], {$fst}]
+    }};
+    // {...}
+    [$f:ident !, $e:expr, {{$($fst:tt)*} }] => {{
+        $f!($e, {$($fst)*})
+    }};
+    [$f:ident !, $e:expr, {{$($fst:tt)*} , $($otr:tt)*}] => {{
+        roll![$f!, roll![$f!, $e,{$($otr)*}], {{$($fst)*}}]
     }};
 
 }
