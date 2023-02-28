@@ -1,9 +1,10 @@
-use hellors::{array};
+use hellors::{table};
 
 fn main() {
 
-    const X = {
-
-    }
+    table![
+        {println!("Hello")},
+        {0..5}
+    ];
 
 }

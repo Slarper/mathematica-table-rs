@@ -79,7 +79,11 @@ macro_rules! table {
     // Allow ignoring the index value:
     // table![expr, {_, iter}]
     [$e:expr, {_, $i:expr}] => {{
-        vec![$e; Iterator::count(IntoIterator::into_iter($i))]
+        let mut v = Vec::new();
+        for _ in $i {
+            v.push($e)
+        };
+        v
     }};
 
     // table![expr, {iter}]
